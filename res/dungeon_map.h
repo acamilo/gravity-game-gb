@@ -23,6 +23,6 @@
 #define dungeon_mapBank 0
 
 #define dungeon_map dungeon_mapPLN0
-extern const unsigned char dungeon_mapPLN0[];
+extern unsigned char dungeon_mapPLN0[];
 
 /* End of DUNGEON_MAP.H */
