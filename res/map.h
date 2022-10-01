@@ -1,6 +1,6 @@
 /*
 
- DUNGEON_MAP.H
+ MAP.H
 
  Map Include File.
 
@@ -8,7 +8,7 @@
    Section       : 
    Bank          : 0
    Map size      : 32 x 32
-   Tile set      : dungeon_32x32.gbr
+   Tile set      : C:\Users\acamilo\Documents\LD51 game\gravity_game\res\tiles_32x32.gbr
    Plane count   : 1 plane (8 bits)
    Plane order   : Planes are continues
    Tile offset   : 0
@@ -18,11 +18,11 @@
 
 */
 
-#define dungeon_mapWidth 32
-#define dungeon_mapHeight 32
-#define dungeon_mapBank 0
+#define mapWidth 32
+#define mapHeight 32
+#define mapBank 0
 
-#define dungeon_map dungeon_mapPLN0
-extern unsigned char dungeon_mapPLN0[];
+#define map mapPLN0
+extern unsigned char mapPLN0[];
 
-/* End of DUNGEON_MAP.H */
+/* End of MAP.H */
