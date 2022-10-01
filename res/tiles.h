@@ -1,6 +1,6 @@
 /*
 
- tiles.H
+ TILES.H
 
  Include File.
 
@@ -10,7 +10,7 @@
   Compression          : None.
   Counter              : None.
   Tile size            : 8 x 8
-  Tiles                : 0 to 78
+  Tiles                : 0 to 85
 
   Palette colors       : Included.
   SGB Palette          : None.
@@ -98,6 +98,6 @@
 #define tilesCGBPal7c2 6596
 #define tilesCGBPal7c3 5344
 /* Start of tile array. */
-extern const const unsigned char tiles[];
+extern unsigned char tiles[];
 
-/* End of tiles.H */
+/* End of TILES.H */
