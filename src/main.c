@@ -29,17 +29,17 @@ void init_gfx() {
 
 void init_player_sprite(){
     // PC will be a 16x16 sprite consisting of 4 smaller sprites
-    set_sprite_tile(0,0x4f);
-    set_sprite_tile(1,0x50);
-    set_sprite_tile(2,0x52);
-    set_sprite_tile(3,0x51);
+    set_sprite_tile(0,0x53);
+    //set_sprite_tile(1,0x50);
+    set_sprite_tile(2,0x54);
+    //set_sprite_tile(3,0x51);
 }
 
 void move_player_sprite(int8_t x,int8_t y){
     move_sprite(0,x  ,y);
-    move_sprite(1,x+8,y);
+    //move_sprite(1,x+8,y);
     move_sprite(2,x  ,y+8);
-    move_sprite(3,x+8,y+8);
+    //move_sprite(3,x+8,y+8);
 
 
 }
