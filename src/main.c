@@ -29,17 +29,17 @@ void init_gfx() {
 
 void init_player_sprite(){
     // PC will be a 16x16 sprite consisting of 4 smaller sprites
-    set_sprite_tile(0,0x53);
-    //set_sprite_tile(1,0x50);
-    set_sprite_tile(2,0x54);
-    //set_sprite_tile(3,0x51);
+    set_sprite_tile(0,0x00);
+    set_sprite_tile(1,0x02);
+    set_sprite_tile(2,0x01);
+    set_sprite_tile(3,0x03);
 }
 
 void move_player_sprite(int8_t x,int8_t y){
     move_sprite(0,x  ,y);
-    //move_sprite(1,x+8,y);
+    move_sprite(1,x+8,y);
     move_sprite(2,x  ,y+8);
-    //move_sprite(3,x+8,y+8);
+    move_sprite(3,x+8,y+8);
 
 
 }
@@ -51,81 +51,103 @@ uint8_t background_scroll_y = 0;
 #define sprite_x_to_tile_x(SX)    ((SX- 8) + background_scroll_x ) >> 3
 #define sprite_y_to_tile_y(SY)    ((SY- 16) + background_scroll_y ) >> 3
 
-uint16_t player_x_pos=20<<8;
-uint16_t player_y_pos=20<<8;
+uint8_t player_x_pos=20;
+uint8_t player_y_pos=20;
 
-int16_t player_y_vel = 0;
-int16_t player_x_vel = 0;
 
 BOOLEAN jumpflag=FALSE;
 
-#define maxvel 16
 
+
+#define jump_height 7
+#define gravity 10    
+
+int8_t falling_speed=0;
+uint8_t jump_counter=2;
+BOOLEAN jumping=FALSE;
+BOOLEAN debounce=TRUE;
 void handle_player_sprite_physics(){
-
-    uint16_t Tx,Ty;
-    Tx=player_x_pos;
-    Ty=player_y_pos;
-
     uint8_t buttons = joypad();
+    int8_t Dx=0;
+    int8_t Dy=0;
 
-    // gravity
-    player_y_vel += 3;
-    if (player_y_vel> 500) player_y_vel = 500;
+    if ( (buttons & J_RIGHT) ) Dx += 2;
+    if ( (buttons & J_LEFT)  ) Dx -= 2;   
+
+    if ( (buttons & J_UP ) && debounce && jump_counter !=0) {
+        jump_counter--;
+        jumping=TRUE;
+        debounce=FALSE;
+        falling_speed=jump_height;
+    }
+
+    if ( !(buttons & J_UP) ) debounce=TRUE;
 
 
-    if (buttons && J_UP){
-        if (jumpflag){
-            player_y_vel += -500;
-            jumpflag=FALSE;
+    if (falling_speed<-gravity) falling_speed=-gravity;
+    Dy -= falling_speed;
+    falling_speed--;
+
+
+    // Clamp speed so we don't fall through a block
+
+
+
+    // Are we going to fall into a block?
+    if (Dy>0){
+    uint8_t SX,SY,Ta,Tb;
+        if (Dy>7) Dy = 7;
+        if (Dx>7) Dx = 7;
+        SX = sprite_x_to_tile_x(player_x_pos+Dx);
+        SY = sprite_y_to_tile_y(player_y_pos+Dy);
+        Ta = get_bkg_tile_xy(SX,SY+2);
+        Tb = get_bkg_tile_xy(SX+1,SY+2);
+        if (Ta==0x1A | Tb==0x1A) {
+            // Bring us right up to the block below.
+            Dy=8-(player_y_pos) & 0x07;
+            
         }
     }
 
-    if (!(buttons && J_UP)){
-        jumpflag=TRUE;
+    // Are we goint to jump into a block
+    if (Dy<0){
+    uint8_t SX,SY,Ta,Tb;
+        if (Dy<-7) Dy = -7;
+        if (Dx<-7) Dx = -7;
+        SX = sprite_x_to_tile_x(player_x_pos+Dx);
+        SY = sprite_y_to_tile_y(player_y_pos+Dy);
+        Ta = get_bkg_tile_xy(SX,SY);
+        Tb = get_bkg_tile_xy(SX+1,SY);
+        if (Ta==0x1A | Tb==0x1A) {
+            // Bring us right up to the block below.
+            Dy=(player_y_pos) & 0x07;
+        }
     }
 
-    EMU_printf("pyv %d",player_y_vel);
-    Ty += player_y_vel;
-    Tx += player_x_vel;
-    // Check for collisions with platforms
-    uint8_t SX,SY,T;
-    uint8_t x,y;
-    x = Tx>>8;
-    y = Ty>>8;
-    SX = sprite_x_to_tile_x(x);
-    SY = sprite_y_to_tile_y(y);
-    SY +=2;
-    T = get_bkg_tile_xy(SX,SY);
-
-    if (T!=1){
-        player_y_pos = Ty;
-    } else {
-        //player_y_vel=0;
+    if (Dy==0) {
+        jumping = FALSE;
+        jump_counter=2;
     }
-    player_x_pos = Tx;
-
     
-
-    //EMU_printf("BB %d,%d  %d",SX,SY,T);
-
-
-    move_player_sprite(player_x_pos>>8,player_y_pos>>8);
-
-
+    //EMU_printf("Dx: %d\tDy: %d\tj: %d\td: %d\trem: %d",Dx,Dy,jumping,debounce,(player_y_pos) & 0x07);
+    //EMU_printf("Dx: %d\tDy: %d\tPx: %d\tPy: %d\tTx: %d\tTy: %d\trem: %d",Dx,Dy,player_x_pos,player_y_pos,SX,SY,(player_y_pos) & 0x07);
+    player_x_pos += Dx;
+    player_y_pos += Dy;
+    move_player_sprite(player_x_pos,player_y_pos);
 }
 
 void main(void)
 {
+    EMU_printf("TEST");
 	init_gfx();
-
+    uint8_t frameCounter=0;
     // Loop forever
     while(1) {
-
+        frameCounter++;
 
 
 		// Game main loop processing goes here
-        handle_player_sprite_physics();
+        if((frameCounter & 0x01)==0)handle_player_sprite_physics();
 
 
 		// Done processing, yield CPU and wait for start of next frame
