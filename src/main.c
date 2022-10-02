@@ -51,26 +51,38 @@ uint8_t background_scroll_y = 0;
 #define sprite_x_to_tile_x(SX)    ((SX- 8) + background_scroll_x ) >> 3
 #define sprite_y_to_tile_y(SY)    ((SY- 16) + background_scroll_y ) >> 3
 
-uint8_t player_x_pos=20;
-uint8_t player_y_pos=20;
+uint8_t player_x_pos=30;
+uint8_t player_y_pos=30;
 
 
 BOOLEAN jumpflag=FALSE;
 
 
 
-#define jump_height 7
+#define jump_height 6
 #define gravity 1   
 #define max_fall_Speed 10 
 
 int8_t falling_speed=0;
+BOOLEAN falling = TRUE;
 uint8_t jump_counter=2;
 BOOLEAN jumping=FALSE;
 BOOLEAN debounce=TRUE;
+BOOLEAN gravity_direction=TRUE;
 void handle_player_sprite_physics(){
+    uint8_t SX,SY,Ta,Tb;
     uint8_t buttons = joypad();
     int8_t Dx=0;
     int8_t Dy=0;
+
+    if ( (buttons & J_A) ) {
+        gravity_direction=TRUE;
+        falling=TRUE;
+        }
+    if ( (buttons & J_B) ) {
+        gravity_direction=FALSE;
+        falling=TRUE;
+        }   
 
     if ( (buttons & J_RIGHT) ) Dx += 2;
     if ( (buttons & J_LEFT)  ) Dx -= 2;   
@@ -78,16 +90,54 @@ void handle_player_sprite_physics(){
     if ( (buttons & J_UP ) && debounce && jump_counter !=0) {
         jump_counter--;
         jumping=TRUE;
+        falling=TRUE;
         debounce=FALSE;
         falling_speed=jump_height;
     }
 
+
+
     if ( !(buttons & J_UP) ) debounce=TRUE;
 
 
+
+if (falling){
     if (falling_speed<-max_fall_Speed) falling_speed=-max_fall_Speed;
-    Dy -= falling_speed;
-    falling_speed--;
+    if (falling_speed>=max_fall_Speed) falling_speed=max_fall_Speed;
+
+    if (gravity_direction){
+        falling_speed--;
+        Dy -= falling_speed;
+    } else {
+        falling_speed--;
+        Dy += falling_speed;
+
+    }
+} else {
+    // Should we be falling?
+        SX = sprite_x_to_tile_x(player_x_pos);
+        SY = sprite_y_to_tile_y(player_y_pos);
+        if (gravity_direction){
+            Ta = get_bkg_tile_xy(SX,SY+2);
+            Tb = get_bkg_tile_xy(SX+1,SY+2);
+        } else {
+            Ta = get_bkg_tile_xy(SX,SY);
+            Tb = get_bkg_tile_xy(SX+1,SY);
+        }
+       
+        if (Ta==0x1A | Tb==0x1A) {
+            
+        } else {
+            falling=TRUE;
+        }
+}
+
+
+
+
+
+
+
 
 
     // Clamp speed so we don't fall through a block
@@ -95,8 +145,8 @@ void handle_player_sprite_physics(){
 
 
     // Are we going to fall into a block?
-    if (Dy>0){
-    uint8_t SX,SY,Ta,Tb;
+    if (falling){
+
         if (Dy>7) Dy = 7;
         if (Dx>7) Dx = 7;
         SX = sprite_x_to_tile_x(player_x_pos+Dx);
@@ -107,12 +157,13 @@ void handle_player_sprite_physics(){
             // Bring us right up to the block below.
             Dy=8-(player_y_pos) & 0x07;
             falling_speed=0;
+            falling=FALSE;
             
         }
     }
 
     // Are we goint to jump into a block
-    if (Dy<0){
+    if (falling){
     uint8_t SX,SY,Ta,Tb;
         if (Dy<-7) Dy = -7;
         if (Dx<-7) Dx = -7;
@@ -124,16 +175,21 @@ void handle_player_sprite_physics(){
             // Bring us right up to the block below.
             Dy=(player_y_pos) & 0x07;
             falling_speed=0;
+            falling=FALSE;
+            
         }
     }
 
-    if (Dy==0) {
+    if (!falling) {
         jumping = FALSE;
         jump_counter=2;
+        
     }
     
     //EMU_printf("Dx: %d\tDy: %d\tj: %d\td: %d\trem: %d",Dx,Dy,jumping,debounce,(player_y_pos) & 0x07);
-    EMU_printf("Dx: %d\tDy: %d\tPx: %d\tPy: %d\tfs: %d",Dx,Dy,player_x_pos,player_y_pos,falling_speed);
+    EMU_printf("Dx: %d\tDy: %d\tPx: %d\tPy: %d\tfs: %d\tGD: %d\tFAL: %d",Dx,Dy,player_x_pos,player_y_pos,falling_speed,gravity_direction,falling);
+
+    //EMU_printf("but: %x",buttons);
     player_x_pos += Dx;
     player_y_pos += Dy;
     move_player_sprite(player_x_pos,player_y_pos);
