@@ -11,13 +11,13 @@ void handle_player_sprite_physics();
 
 void init_gfx() {
     // Load Background tiles and then map
-    set_bkg_data(0, 85u, tiles);
+    set_bkg_data(0, 126u, tiles);
     set_bkg_tiles(0, 0, 32u, 32u, mapPLN0);
     move_bkg(0,0);
 
     SPRITES_8x8;
     OBP1_REG=OBP0_REG;
-    set_sprite_data(0,85u,tiles);
+    set_sprite_data(0,32u,tiles);
 
     init_player_sprite();
 
@@ -60,7 +60,8 @@ BOOLEAN jumpflag=FALSE;
 
 
 #define jump_height 7
-#define gravity 10    
+#define gravity 1   
+#define max_fall_Speed 10 
 
 int8_t falling_speed=0;
 uint8_t jump_counter=2;
@@ -84,7 +85,7 @@ void handle_player_sprite_physics(){
     if ( !(buttons & J_UP) ) debounce=TRUE;
 
 
-    if (falling_speed<-gravity) falling_speed=-gravity;
+    if (falling_speed<-max_fall_Speed) falling_speed=-max_fall_Speed;
     Dy -= falling_speed;
     falling_speed--;
 
@@ -105,6 +106,7 @@ void handle_player_sprite_physics(){
         if (Ta==0x1A | Tb==0x1A) {
             // Bring us right up to the block below.
             Dy=8-(player_y_pos) & 0x07;
+            falling_speed=0;
             
         }
     }
@@ -121,6 +123,7 @@ void handle_player_sprite_physics(){
         if (Ta==0x1A | Tb==0x1A) {
             // Bring us right up to the block below.
             Dy=(player_y_pos) & 0x07;
+            falling_speed=0;
         }
     }
 
@@ -130,7 +133,7 @@ void handle_player_sprite_physics(){
     }
     
     //EMU_printf("Dx: %d\tDy: %d\tj: %d\td: %d\trem: %d",Dx,Dy,jumping,debounce,(player_y_pos) & 0x07);
-    //EMU_printf("Dx: %d\tDy: %d\tPx: %d\tPy: %d\tTx: %d\tTy: %d\trem: %d",Dx,Dy,player_x_pos,player_y_pos,SX,SY,(player_y_pos) & 0x07);
+    EMU_printf("Dx: %d\tDy: %d\tPx: %d\tPy: %d\tfs: %d",Dx,Dy,player_x_pos,player_y_pos,falling_speed);
     player_x_pos += Dx;
     player_y_pos += Dy;
     move_player_sprite(player_x_pos,player_y_pos);
